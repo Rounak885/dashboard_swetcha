@@ -22,7 +22,7 @@ authenticator = stauth.Authenticate(
 authenticator.login(location='main')
 
 if st.session_state.get("authentication_status"):
-    st.sidebar.success(f"Welcome {st.session_state['name']} \U0001F44B")
+    st.sidebar.success(f"Welcome {st.session_state['name']} 👋")
     authenticator.logout(location='sidebar')
     st.title("📞 Exotel Status Dashboard")
 
@@ -56,14 +56,20 @@ if st.session_state.get("authentication_status"):
         if "DisconnectedBy" in df.columns:
             df["DisconnectedBy"] = df["DisconnectedBy"].fillna("Unspecified")
 
-        # View Mode Toggle
         view_option = st.radio("Choose View Mode:", ["All Data (Weekly)", "Filter by Date"])
+
         if "Date" in df.columns:
+            df["Year"] = pd.to_datetime(df["Date"]).dt.isocalendar().year
+            df["Week"] = pd.to_datetime(df["Date"]).dt.isocalendar().week
+            df["YearWeek"] = df["Year"].astype(str) + "-W" + df["Week"].astype(str).str.zfill(2)
+
             if view_option == "Filter by Date":
                 selected_date = st.date_input("Select a date", df["Date"].min())
                 filtered_df = df[df["Date"] == selected_date]
             else:
-                filtered_df = df
+                week_options = sorted(df["YearWeek"].unique(), reverse=True)
+                selected_week = st.selectbox("Select a week", week_options)
+                filtered_df = df[df["YearWeek"] == selected_week]
         else:
             st.warning("No 'Date' column found.")
             filtered_df = df
@@ -120,7 +126,6 @@ if st.session_state.get("authentication_status"):
                 "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
             fig, ax = plt.subplots(figsize=(8, 4))
             sns.heatmap(heatmap_data, annot=True, fmt=".0f", cmap="YlGnBu", ax=ax)
-
             st.pyplot(fig)
 
         # Completed Leaderboard
