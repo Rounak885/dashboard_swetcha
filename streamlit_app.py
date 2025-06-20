@@ -7,6 +7,7 @@ import yaml
 import os
 from io import StringIO
 import base64
+import datetime
 
 # Load secrets
 signing_key = st.secrets["COOKIE_SIGNING_KEY"]
@@ -67,8 +68,21 @@ if st.session_state.get("authentication_status"):
                 selected_date = st.date_input("Select a date", df["Date"].min())
                 filtered_df = df[df["Date"] == selected_date]
             else:
-                week_options = sorted(df["YearWeek"].unique(), reverse=True)
-                selected_week = st.selectbox("Select a week", week_options)
+                # NEW: Show week labels like "Jun 3 – Jun 9, 2024"
+                week_ranges = {}
+                for yw in df["YearWeek"].unique():
+                    year, week = map(int, yw.split("-W"))
+                    start_date = datetime.date.fromisocalendar(year, week, 1)
+                    end_date = start_date + datetime.timedelta(days=6)
+                    label = f"{start_date.strftime('%b %d')} – {end_date.strftime('%b %d, %Y')}"
+                    week_ranges[yw] = label
+
+                sorted_weeks = sorted(week_ranges.items(), key=lambda x: x[0], reverse=True)
+                week_labels = [v for _, v in sorted_weeks]
+                week_lookup = {v: k for k, v in week_ranges.items()}
+
+                selected_label = st.selectbox("Select a week", week_labels)
+                selected_week = week_lookup[selected_label]
                 filtered_df = df[df["YearWeek"] == selected_week]
         else:
             st.warning("No 'Date' column found.")
