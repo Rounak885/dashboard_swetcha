@@ -141,6 +141,17 @@ if st.session_state.get("authentication_status"):
             fig, ax = plt.subplots(figsize=(8, 4))
             sns.heatmap(heatmap_data, annot=True, fmt=".0f", cmap="YlGnBu", ax=ax)
             st.pyplot(fig)
+            # Monthly Heatmap
+        st.subheader("📆 Monthly Call Heatmap")
+        if "StartTime" in filtered_df.columns and "Status" in filtered_df.columns:
+            filtered_df["Month"] = filtered_df["StartTime"].dt.strftime("%B")
+            filtered_df["Day"] = filtered_df["StartTime"].dt.day
+            month_heatmap = filtered_df.groupby(["Month", "Day"]).size().unstack(fill_value=0)
+            month_heatmap = month_heatmap.astype(int)
+            fig, ax = plt.subplots(figsize=(12, 5))
+            sns.heatmap(month_heatmap, annot=True, fmt="d", cmap="YlOrRd", ax=ax)
+            st.pyplot(fig)
+
 
         # Completed Leaderboard
         st.subheader("🏆 Completed Calls Leaderboard")
