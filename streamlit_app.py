@@ -116,7 +116,9 @@ if st.session_state.get("authentication_status"):
         col3.metric("Missed Calls", missed)
 
         col4, col5 = st.columns(2)
-        col4.metric("Total Duration (s)", f"{total_duration:.0f}")
+        total_hours = total_duration / 3600  # Convert seconds to hours
+        col4.metric("Total Duration (hrs)", f"{total_hours:.2f}")
+
         col5.metric("Avg Duration (s)", f"{avg_duration:.1f}")
 
         # Call Status Distribution
