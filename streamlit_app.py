@@ -57,7 +57,8 @@ if st.session_state.get("authentication_status"):
         if "DisconnectedBy" in df.columns:
             df["DisconnectedBy"] = df["DisconnectedBy"].fillna("Unspecified")
 
-        view_option = st.radio("Choose View Mode:", ["All Data (Weekly)", "Filter by Date"])
+        # View Mode Selection
+        view_option = st.radio("Choose View Mode:", ["All Time", "Weekly", "Filter by Date"])
 
         if "Date" in df.columns:
             df["Year"] = pd.to_datetime(df["Date"]).dt.isocalendar().year
@@ -67,8 +68,8 @@ if st.session_state.get("authentication_status"):
             if view_option == "Filter by Date":
                 selected_date = st.date_input("Select a date", df["Date"].min())
                 filtered_df = df[df["Date"] == selected_date]
-            else:
-                # NEW: Show week labels like "Jun 3 – Jun 9, 2024"
+
+            elif view_option == "Weekly":
                 week_ranges = {}
                 for yw in df["YearWeek"].unique():
                     year, week = map(int, yw.split("-W"))
@@ -84,6 +85,9 @@ if st.session_state.get("authentication_status"):
                 selected_label = st.selectbox("Select a week", week_labels)
                 selected_week = week_lookup[selected_label]
                 filtered_df = df[df["YearWeek"] == selected_week]
+
+            else:  # All Time
+                filtered_df = df
         else:
             st.warning("No 'Date' column found.")
             filtered_df = df
@@ -132,16 +136,16 @@ if st.session_state.get("authentication_status"):
             status_by_vol = filtered_df.groupby(["ToName", "Status"]).size().unstack(fill_value=0)
             st.bar_chart(status_by_vol)
 
-        # Heatmap
+        # Heatmap (Day-wise)
         st.subheader("🌡️ Call Heatmap by Day")
         if "DayOfWeek" in filtered_df.columns and "Status" in filtered_df.columns:
             heatmap_data = filtered_df.groupby(["DayOfWeek", "Status"]).size().unstack(fill_value=0)
-            heatmap_data = heatmap_data.reindex([
-                "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
+            heatmap_data = heatmap_data.reindex(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
             fig, ax = plt.subplots(figsize=(8, 4))
             sns.heatmap(heatmap_data, annot=True, fmt=".0f", cmap="YlGnBu", ax=ax)
             st.pyplot(fig)
-            # Monthly Heatmap
+
+        # Heatmap (Month-wise)
         st.subheader("📆 Monthly Call Heatmap")
         if "StartTime" in filtered_df.columns and "Status" in filtered_df.columns:
             filtered_df["Month"] = filtered_df["StartTime"].dt.strftime("%B")
@@ -151,7 +155,6 @@ if st.session_state.get("authentication_status"):
             fig, ax = plt.subplots(figsize=(12, 5))
             sns.heatmap(month_heatmap, annot=True, fmt="d", cmap="YlOrRd", ax=ax)
             st.pyplot(fig)
-
 
         # Completed Leaderboard
         st.subheader("🏆 Completed Calls Leaderboard")
